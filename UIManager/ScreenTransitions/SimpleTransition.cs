@@ -30,7 +30,8 @@ namespace UIFramework
             if (UnityObjectUtility.IsUnityNull(_sequence) == false) _sequence.Kill(true);
             transform.localScale = Vector3.zero;
             _sequence = DOTween.Sequence();
-            _sequence.Append(transform.DOScale(Vector3.one, _fadeDuration).SetEase(Ease.OutBounce));
+            _sequence.SetUpdate(true);
+            _sequence.Append(transform.DOScale(Vector3.one, _fadeDuration).SetEase(Ease.OutBack));
             _sequence.onComplete += () => { _currentAction?.Invoke(); };
             _sequence.Play();
         }
@@ -39,6 +40,7 @@ namespace UIFramework
         {
             if (UnityObjectUtility.IsUnityNull(_sequence) == false) _sequence.Kill(true);
             transform.localScale = Vector3.one;
+            _sequence.SetUpdate(true);
             _sequence = DOTween.Sequence();
             _sequence.Append(transform.DOScale(Vector3.zero, _fadeDuration).SetEase(Ease.InBack));
             _sequence.onComplete += () => { _currentAction?.Invoke(); };

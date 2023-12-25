@@ -42,6 +42,10 @@ namespace UIFramework
             var uiName = PublicStaticMethod.GetTypeName<T>();
             var ui = await ResourceManager.Instance.LoadUIPrefabAsync<T>();
             ReparentToParaLayer(ui.transform);
+            if (ui.name.EndsWith("(Clone)"))
+            {
+                ui.name = ui.name.Replace("(Clone)", "").Trim();
+            }
             _allWorldList.Add(ui);
             ui.Open();
             return ui;
@@ -84,13 +88,23 @@ namespace UIFramework
         }
 
         public void CloseUI(UIBase screen)
+        {     
+            _allWorldList.Remove(screen);
+            if (screen.CloseFinishAction.IsUnityNull() == false) screen.CloseFinishAction(screen);
+            screen.gameObject.Release();
+        }
+        
+        public T GetUI<T>() where T : UIBase
         {
-            screen.CloseFinishAction = (screen) =>
-            {
-                _allWorldList.Remove(screen);
-                screen.gameObject.Release();
-            };
-            screen.Finish();
+            var uiName = PublicStaticMethod.GetTypeName<T>();
+            var ui = _allWorldList.Find(x => x.name == uiName) as T;
+            return ui;
+        }
+
+        public UIBase GetUI(string uiName)
+        {
+            var ui = _allWorldList.Find(x => x.name == uiName);
+            return ui;
         }
 
         private void ReparentToParaLayer(Transform screenTransform, UIPriority priority = UIPriority.Default)

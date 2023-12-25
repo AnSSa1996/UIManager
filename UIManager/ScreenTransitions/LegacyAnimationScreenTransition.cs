@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -10,11 +11,11 @@ namespace UIFramework.Examples
         [SerializeField] private AnimationClip clip = null;
 
         private UnityAction _previousCallbackWhenFinished;
-        private bool _fadeIn = true;
+        private bool _fadeIn = false;
         
         public override void Animate(Transform target, bool fadeIn, UnityAction action) {
             FinishPrevious();
-            var targetAnimation = target.GetComponent<Animation>();
+            var targetAnimation = target.GetOrAddComponent<Animation>();
             if (targetAnimation == null) {
                 Debug.LogError("[LegacyAnimationScreenTransition] No Animation component in " + target);
                 if (action != null) {
@@ -24,6 +25,7 @@ namespace UIFramework.Examples
                 return;
             }
 
+            _fadeIn = fadeIn;
             targetAnimation.clip = clip;
             StartCoroutine(PlayAnimationRoutine(targetAnimation, action));
         }

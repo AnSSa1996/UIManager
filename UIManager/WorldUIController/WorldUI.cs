@@ -10,11 +10,18 @@ namespace UIFramework
         public override void Close()
         {
             UIManager.Instance.CloseUI(this);
+            base.Close();
         }
         
         protected override void HierarchyFixOnShow()
         {
             transform.SetAsLastSibling();
+        }
+        
+        protected override void OnTransitionOutFinished()
+        {
+            base.OnTransitionOutFinished();
+            gameObject.Release();
         }
     }
 }

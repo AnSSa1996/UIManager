@@ -1,4 +1,6 @@
-﻿namespace UIFramework
+﻿using Cysharp.Threading.Tasks;
+
+namespace UIFramework
 {
     public struct PopupUIHistoryEntry
     {
@@ -11,9 +13,9 @@
             Priority = priority;
         }
 
-        public void Open()
+        public async UniTask Open()
         {
-            Screen.Open(Priority);
+            await Screen.Open(Priority);
         }
     }
 }

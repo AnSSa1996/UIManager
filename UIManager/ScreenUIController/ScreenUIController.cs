@@ -15,7 +15,7 @@ namespace UIFramework
             var uiName = PublicStaticMethod.GetTypeName<T>();
             var screen = _registeredScreens[uiName] as T;
             ReparentToParaLayer(screen.transform, priority);
-            screen.Open();
+            screen.Open(priority);
             return new UniTask<T>(screen);
         }
 
@@ -44,7 +44,7 @@ namespace UIFramework
         public override void OpenUI(UIBase screen, UIPriority priority)
         {
             ReparentToParaLayer(screen.transform, priority);
-            screen.Open();
+            screen.Open(priority);
         }
 
         public override void CloseUI(UIBase screen)

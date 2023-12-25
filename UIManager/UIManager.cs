@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using System;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -8,12 +8,22 @@ namespace UIFramework
 {
     public class UIManager : Singleton<UIManager>
     {
+        private const float DEFAULT_RESOLUTION_WIDTH = 1920f;
+        private const float DEFAULT_RESOLUTION_HEIGHT = 1080f;   
+        private const float DEFAULT_RESOLUTION_RATIO = 1.777777777777778f;
+        private const float DEFAULT_FILED_OF_VIEW = 38.5f;
+        
         private ScreenUIController _screenController;
         private PopupUIController _popupController;
         [SerializeField] private WorldUIController _worldUIController;
 
         private Canvas _mainCanvas;
         private GraphicRaycaster _graphicRaycaster;
+        
+        
+        private float _currentResolutionWidth = 0f;
+        private float _currentResolutionHeight = 0f;
+        private float _currentResolutionRatio = 0f;
 
         public Canvas MainCanvas
         {
@@ -32,11 +42,10 @@ namespace UIFramework
         {
             get { return MainCanvas.worldCamera; }
         }
-
-        protected override void Awake()
+        
+        public Camera WorldCamera
         {
-            base.Awake();
-            Initialize();
+            get { return _worldUIController.WorldCamera; }
         }
 
         public virtual void Initialize()
@@ -63,6 +72,21 @@ namespace UIFramework
             DontDestroyOnLoad(_worldUIController);
 
             _graphicRaycaster = MainCanvas.GetComponent<GraphicRaycaster>();
+            InitResoultion();
+        }
+
+        private void InitResoultion()
+        {
+            _currentResolutionWidth = Screen.width;
+            _currentResolutionHeight = Screen.height;
+            _currentResolutionRatio = _currentResolutionWidth / _currentResolutionHeight;
+
+            if (DEFAULT_RESOLUTION_RATIO <= _currentResolutionRatio) return;
+            float fieldOfView = DEFAULT_FILED_OF_VIEW * (DEFAULT_RESOLUTION_RATIO / _currentResolutionRatio);
+            UICamera.fieldOfView = fieldOfView;
+            
+            var canvasScaler = GetComponent<CanvasScaler>();
+            canvasScaler.matchWidthOrHeight = 0f;
         }
 
 
@@ -74,24 +98,26 @@ namespace UIFramework
         public async UniTask<T> OpenUI<T>(UIPriority priority = UIPriority.Default) where T : UIBase
         {
             Type type = typeof(T);
-            if (typeof(PopupUI).IsAssignableFrom(type))
-            {
-                return await OpenPopUI<T>();
-            }
 
             if (typeof(PopupUI).IsAssignableFrom(type) && priority != UIPriority.Default)
             {
                 return await OpenPopupUI<T>(priority);
             }
 
-            if (typeof(ScreenUI).IsAssignableFrom(type))
+            if (typeof(PopupUI).IsAssignableFrom(type))
             {
-                return await OpenScreenUI<T>();
+                return await OpenPopUI<T>();
             }
+
 
             if (typeof(ScreenUI).IsAssignableFrom(type) && priority != UIPriority.Default)
             {
                 return await OpenScreenUI<T>(priority);
+            }
+
+            if (typeof(ScreenUI).IsAssignableFrom(type))
+            {
+                return await OpenScreenUI<T>();
             }
 
             return null;
@@ -122,7 +148,7 @@ namespace UIFramework
             }
         }
 
-        public void CloseUI(UIBase ui, bool animate = true)
+        public void CloseUI(UIBase ui)
         {
             Type type = ui.GetType();
             if (typeof(PopupUI).IsAssignableFrom(type))
@@ -139,6 +165,13 @@ namespace UIFramework
             {
                 _worldUIController.CloseUI(ui);
             }
+        }
+
+        public void CloseAllUI()
+        {
+            CloseAllScreenUI(false);
+            CloseAllPopupUI(false);
+            CloseAllWorldUI();
         }
 
         public void CloseAllScreenUI(bool animate = true)
@@ -172,7 +205,24 @@ namespace UIFramework
                 return _screenController.GetUI<T>();
             }
 
+            if (typeof(WorldUI).IsAssignableFrom(type))
+            {
+                return _worldUIController.GetUI<T>();
+            }
+            
             return null;
+        }
+
+        public UIBase GetUI(string uiName)
+        {
+            UIBase result;
+            result = _popupController.GetUI(uiName);
+            if (result.IsUnityNull() == false) return result;
+            result = _screenController.GetUI(uiName);
+            if (result.IsUnityNull() == false) return result;
+            result = _worldUIController.GetUI(uiName);
+            if (result.IsUnityNull() == false) return result;
+            return result;
         }
 
         private async UniTask<T> OpenScreenUI<T>() where T : UIBase
@@ -208,14 +258,9 @@ namespace UIFramework
         public async UniTask<T> OpenWorldUI<T>(Vector3 position) where T : UIBase
         {
             var worldUI = await _worldUIController.OpenUIByName<T>();
-            var screenPosition = UICamera.WorldToScreenPoint(position);
-            var worldCanvas = _worldUIController.WorldCanvas;
-            var canvasRectTransform = worldCanvas.GetComponent<RectTransform>();
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRectTransform, screenPosition, UICamera,
-                out Vector2 localPosition);
-            var rectTransform = worldUI.GetComponent<RectTransform>();
-            rectTransform.localPosition = localPosition;
-            rectTransform.localRotation = worldCanvas.worldCamera.transform.localRotation;
+            var rectTransform = worldUI.GetComponent<Transform>();
+            rectTransform.InitLocalTransform();
+            rectTransform.position = position;
             return worldUI;
         }
 

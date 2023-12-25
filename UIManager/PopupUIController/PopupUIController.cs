@@ -1,6 +1,7 @@
 ﻿using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -9,20 +10,17 @@ namespace UIFramework
 {
     public class PopupUIController : UIController
     {
-        [SerializeField]
-        private PopupUIParaLayer priorityParaLayer = null;
+        [SerializeField] private PopupUIParaLayer priorityParaLayer = null;
 
         public PopupUI CurrentPopupUI { get; private set; }
 
-        private Queue<PopupUIHistoryEntry> _windowQueue;
-        private Stack<PopupUIHistoryEntry> _windowHistory;
+        private List<PopupUIHistoryEntry> _windowHistoryList;
 
         public override void Initialize()
         {
             base.Initialize();
             _registeredScreens = new Dictionary<string, UIBase>();
-            _windowQueue = new Queue<PopupUIHistoryEntry>();
-            _windowHistory = new Stack<PopupUIHistoryEntry>();
+            _windowHistoryList = new List<PopupUIHistoryEntry>();
         }
 
         protected override void ProcessUIRegister(string screenId, UIBase controllerController)
@@ -31,7 +29,7 @@ namespace UIFramework
             controllerController.OpenFinishAction += OnInAnimationFinished;
             controllerController.CloseFinishAction += OnOutAnimationFinished;
         }
-        
+
         protected override UniTask<T> OpenUI<T>()
         {
             return OpenUI<T>(UIPriority.Default);
@@ -42,18 +40,9 @@ namespace UIFramework
             var uiName = PublicStaticMethod.GetTypeName<T>();
             var screen = _registeredScreens[uiName] as T;
             var popupUI = screen as PopupUI;
-            
+
             if (popupUI.IsUnityNull()) return new UniTask<T>(null);
-
-            if (ShouldEnqueue(popupUI))
-            {
-                EnqueueWindow(popupUI, priority);
-            }
-            else
-            {
-                DoOpen(popupUI, priority);
-            }
-
+            DoOpen(popupUI, priority, popupUI.useDarkenBG);
             return new UniTask<T>(screen);
         }
 
@@ -61,22 +50,12 @@ namespace UIFramework
         {
             var uiName = PublicStaticMethod.GetTypeName<T>();
             var screen = _registeredScreens[uiName] as T;
-            if (screen == CurrentPopupUI)
-            {
-                _windowHistory.Pop();
-                screen.Finish();
-
-                CurrentPopupUI = null;
-
-                if (_windowQueue.Count > 0)
-                {
-                    OpenNextInQueue();
-                }
-                else if (_windowHistory.Count > 0)
-                {
-                    OpenPreviousInHistory();
-                }
-            }
+            if (screen != CurrentPopupUI) return;
+            if (_windowHistoryList.Count == 0) return;
+            _windowHistoryList.Remove(_windowHistoryList.Last());
+            screen.Finish();
+            CurrentPopupUI = null;
+            if (_windowHistoryList.Count > 0) ChangeCurrentPopupUI();
         }
 
         public override void OpenUI(UIBase screen)
@@ -84,51 +63,23 @@ namespace UIFramework
             var popupUI = screen as PopupUI;
 
             if (popupUI.IsUnityNull()) return;
-            
-            if (ShouldEnqueue(popupUI))
-            {
-                EnqueueWindow(popupUI);
-            }
-            else
-            {
-                DoOpen(popupUI);
-            }
+            DoOpen(popupUI, useDarkenBG: popupUI.useDarkenBG);
         }
 
         public override void OpenUI(UIBase screen, UIPriority priority)
         {
             var popupUI = screen as PopupUI;
-
             if (popupUI.IsUnityNull()) return;
-            
-            if (ShouldEnqueue(popupUI))
-            {
-                EnqueueWindow(popupUI, priority);
-            }
-            else
-            {
-                DoOpen(popupUI, priority);
-            }
+            DoOpen(popupUI, priority, popupUI.useDarkenBG);
         }
 
         public override void CloseUI(UIBase screen)
         {
-            if (screen == CurrentPopupUI)
-            {
-                _windowHistory.Pop();
-                screen.Finish();
-
-                CurrentPopupUI = null;
-
-                if (_windowQueue.Count > 0)
-                {
-                    OpenNextInQueue();
-                }
-                else if (_windowHistory.Count > 0)
-                {
-                    OpenPreviousInHistory();
-                }
-            }
+            if (screen != CurrentPopupUI) return;
+            _windowHistoryList.Remove(_windowHistoryList.Last());
+            screen.Finish();
+            CurrentPopupUI = null;
+            if (_windowHistoryList.Count > 0) ChangeCurrentPopupUI();
         }
 
         public override void CloseAll(bool shouldAnimateWhenHiding = true)
@@ -136,76 +87,41 @@ namespace UIFramework
             base.CloseAll(shouldAnimateWhenHiding);
             CurrentPopupUI = null;
             priorityParaLayer.RefreshDarken();
-            _windowHistory.Clear();
+            _windowHistoryList.Clear();
         }
 
-        private void EnqueueWindow(PopupUI screen, UIPriority priority = UIPriority.Default)
+        private void ChangeCurrentPopupUI()
         {
-            _windowQueue.Enqueue(new PopupUIHistoryEntry(screen, priority));
+            if (_windowHistoryList.Count > 0 == false) return;
+            PopupUIHistoryEntry popupUI = _windowHistoryList.Last();
+            CurrentPopupUI = popupUI.Screen;
         }
 
-        private bool ShouldEnqueue(PopupUI controllerController)
-        {
-            if (CurrentPopupUI == null && _windowQueue.Count == 0)
-            {
-                return false;
-            }
-            
-            if (controllerController.Priority != UIPriority.Default)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private void OpenPreviousInHistory()
-        {
-            if (_windowHistory.Count > 0)
-            {
-                PopupUIHistoryEntry popupUI = _windowHistory.Pop();
-                DoOpen(popupUI);
-            }
-        }
-
-        private void OpenNextInQueue()
-        {
-            if (_windowQueue.Count > 0)
-            {
-                PopupUIHistoryEntry popupUI = _windowQueue.Dequeue();
-                DoOpen(popupUI);
-            }
-        }
-
-        private void DoOpen(PopupUI screen, UIPriority priority = UIPriority.Default)
+        private void DoOpen(PopupUI screen, UIPriority priority = UIPriority.Default, bool useDarkenBG = true)
         {
             DoOpen(new PopupUIHistoryEntry(screen, priority));
         }
 
-        private void DoOpen(PopupUIHistoryEntry popupUIEntry)
+        private async void DoOpen(PopupUIHistoryEntry popupUIEntry)
         {
+            if (popupUIEntry.IsUnityNull()) return;
+            if (popupUIEntry.Screen.IsUnityNull()) return;
             if (CurrentPopupUI == popupUIEntry.Screen)
             {
                 Debug.LogWarning($"열려있는 PopupUI를 다시 열려고 시도했습니다. {popupUIEntry.Screen.name}");
                 return;
             }
             
-            if (CurrentPopupUI != null)
-            {
-                CurrentPopupUI.Finish();
-            }
-
-            _windowHistory.Push(popupUIEntry);
-            priorityParaLayer.DarkenBG();
-
             CurrentPopupUI = popupUIEntry.Screen;
-            popupUIEntry.Screen.transform.SetParent(priorityParaLayer.transform);
-            popupUIEntry.Open();
+            _windowHistoryList.RemoveAll(x => x.Screen == CurrentPopupUI);
+            _windowHistoryList.Add(popupUIEntry);
+            await popupUIEntry.Open();
+            priorityParaLayer.AddScreen(popupUIEntry.Screen);
+            priorityParaLayer.RefreshDarken();
         }
 
         private void OnInAnimationFinished(UIBase screen)
         {
-            
         }
 
         private void OnOutAnimationFinished(UIBase screen)

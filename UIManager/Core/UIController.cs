@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using System;
 using UnityEngine;
 using System.Collections.Generic;
@@ -44,7 +44,7 @@ namespace UIFramework
             }
             else
             {
-                Debug.LogError("이미 등록되어 있습니다 " + screenId);
+                Debug.LogWarning("이미 등록되어 있습니다 " + screenId);
             }
         }
         
@@ -78,6 +78,8 @@ namespace UIFramework
         {
             foreach (var screen in _registeredScreens)
             {
+                if (screen.Value.IsVisible == false) continue;
+                if (screen.Value.Priority == UIPriority.High) continue;
                 screen.Value.Finish(animated);
             }
         }
@@ -88,6 +90,16 @@ namespace UIFramework
             if (_registeredScreens.ContainsKey(uiName))
             {
                 return _registeredScreens[uiName] as T;
+            }
+            
+            return null;
+        }
+        
+        public UIBase GetUI(string uiName)
+        {
+            if (_registeredScreens.ContainsKey(uiName))
+            {
+                return _registeredScreens[uiName];
             }
             
             return null;

@@ -7,12 +7,13 @@ namespace UIFramework
     {
         [SerializeField] private GameObject darkenBgObject = null;
 
-        private List<GameObject> containedScreens = new List<GameObject>();
+        private List<PopupUI> containedScreens = new List<PopupUI>();
 
-        public void AddScreen(Transform screenRectTransform)
+        public void AddScreen(PopupUI screenRectTransform)
         {
-            screenRectTransform.SetParent(transform, false);
-            containedScreens.Add(screenRectTransform.gameObject);
+            screenRectTransform.transform.SetParent(transform, false);
+            if (containedScreens.Contains(screenRectTransform)) return;
+            containedScreens.Add(screenRectTransform);
         }
 
         public void RefreshDarken()
@@ -21,8 +22,9 @@ namespace UIFramework
             {
                 if (containedScreens[i] != null)
                 {
-                    if (containedScreens[i].activeSelf)
+                    if (containedScreens[i].gameObject.activeInHierarchy && containedScreens[i].useDarkenBG)
                     {
+                        darkenBgObject.transform.SetSiblingIndex(containedScreens[i].transform.GetSiblingIndex() - 1);
                         darkenBgObject.SetActive(true);
                         return;
                     }
@@ -30,12 +32,6 @@ namespace UIFramework
             }
 
             darkenBgObject.SetActive(false);
-        }
-
-        public void DarkenBG()
-        {
-            darkenBgObject.SetActive(true);
-            darkenBgObject.transform.SetAsLastSibling();
         }
     }
 }
