@@ -1,3 +1,3 @@
-# UIManager ver 0.2
+# UIManager
 
 UIManager입니다.
