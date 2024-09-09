@@ -15,4 +15,5 @@
 
 # 사용 방법
 
+1. @UIManager 프리팹을 첫 씬에 배치합니다. (프로젝트가 처음 시작되는 StartScene)
 ![image](https://github.com/user-attachments/assets/36db1402-3c08-4477-864b-bc88420190ed)
