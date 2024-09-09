@@ -12,6 +12,16 @@
 * 자동 바인딩. (enum)
 * Prefab이름과 클래스의 이름이 같아야합니다. 클래스의 이름으로 프리팹을 찾습니다. (클래스 프리팹 1:1 매칭)
 
+# 사용 영상
+
+
 
 # 사용 방법
 
+1. @UIManager 프리팹을 첫 씬에 배치합니다. (프로젝트가 처음 시작되는 StartScene)
+
+![image](https://github.com/user-attachments/assets/36db1402-3c08-4477-864b-bc88420190ed)
+
+2. MainCamera UICamera 셋팅하기.
+
+![image](https://github.com/user-attachments/assets/0e3fb2f5-952b-46d3-894d-ee5d15213b82)
