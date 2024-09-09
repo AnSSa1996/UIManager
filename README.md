@@ -14,9 +14,17 @@
 
 # 사용 영상
 
+https://github.com/user-attachments/assets/3980da59-576a-487d-b78a-d84316bb4be3
+
+
 
 
 # 사용 방법
+
+- 기본적으로 ResourceManager 셋팅하셔야합니다.
+
+![image](https://github.com/user-attachments/assets/1308be0b-fce7-445d-9ac1-703fe8697a10)
+
 
 1. @UIManager 프리팹을 첫 씬에 배치합니다. (프로젝트가 처음 시작되는 StartScene)
 
@@ -25,3 +33,8 @@
 2. MainCamera UICamera 셋팅하기.
 
 ![image](https://github.com/user-attachments/assets/0e3fb2f5-952b-46d3-894d-ee5d15213b82)
+
+3. UI Scripts 및 UI Prefab 작성하기.
+
+![image](https://github.com/user-attachments/assets/8bb84f8e-6743-439a-b777-77c84344d27d)
+![image](https://github.com/user-attachments/assets/2f7029ff-ab04-44a9-95d9-e70600c7e8b6)
