@@ -13,6 +13,9 @@
 * 배칭을 극대화 하기 위해, 단일 캔버스를 사용해서 구현했습니다. (간단한 프로젝트를 위한, UIManager)
 * 자동 바인딩. (enum)
 * Prefab이름과 클래스의 이름이 같아야합니다. 클래스의 이름으로 프리팹을 찾습니다. (클래스 프리팹 1:1 매칭)
+* 프리팹과 Class 이름을 1:1 대칭시켜 Class 이름으로 프리팹 로드 및 클래스 자동 추가 가능합니다.
+* ScreenUI, PopupUI, WorldUI 각종 UI들의 우선 순위 및 열기, 닫기, 찾기 시스템.
+* EX) UIFormManager.Instance.OpenUI<TestUI>() -> TestUI 프리팹 오픈.
 
 
 # 사용 영상
