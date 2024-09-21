@@ -19,8 +19,7 @@
 
 
 # 사용 영상
-
-
+https://github.com/user-attachments/assets/025da5c5-64ab-4f06-88b6-eb4ffe7d84b3
 
 
 # 사용 방법
